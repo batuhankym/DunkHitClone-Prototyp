@@ -5,6 +5,7 @@ using DG.Tweening;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Serialization;
+using Random = System.Random;
 using Screen = UnityEngine.Device.Screen;
 
 public class BallController : MonoBehaviour
@@ -41,7 +42,6 @@ public class BallController : MonoBehaviour
     private float objectHeight;
 
 
-
     private void Start()
     {
 
@@ -59,45 +59,11 @@ public class BallController : MonoBehaviour
 
     private void LateUpdate()
     {
-        var objPosition = transform.position;
-        var cameraPosition = mainCam.transform.position;
-        var cameraViewSize = mainCam.orthographicSize;
-        var cameraAspectRatio = mainCam.aspect;
-
-        var xMin = cameraPosition.x - cameraViewSize * cameraAspectRatio;
-        var xMax = cameraPosition.x + cameraViewSize * cameraAspectRatio;
-
-        if (objPosition.x < xMin)
-        {
-            objPosition.x = xMax;
-            _ballRb.AddForce(Vector3.left * 40);
-
-            _ballRb.velocity = Vector3.zero;
-
-
-
-        }
-        else if (objPosition.x > xMax)
-        {
-            objPosition.x = xMin;
-            _ballRb.AddForce(Vector3.right * 40);
-
-            _ballRb.velocity = Vector3.zero;
-
-
-
-        }
-
-        transform.position = objPosition;
+        LimitBallPosition();
     }
 
     private void Update()
     {
-
-
-
-
-
 
         if (Input.GetMouseButtonDown(0))
         {
@@ -110,11 +76,12 @@ public class BallController : MonoBehaviour
             _isMouseClicked = false;
         }
 
-
-
-
     }
 
+
+   
+    
+    
     private void FixedUpdate()
     {
         if (_isMouseClicked && _isBallScoreInNest)
@@ -133,6 +100,7 @@ public class BallController : MonoBehaviour
     {
         _ballRb.AddForce((Vector3.up * (ballJumpForce * Time.deltaTime)));
         _ballRb.AddForce((Vector3.left * (ballMoveForce * Time.deltaTime)));
+        transform.RotateAround(transform.position, Vector3.down, 180f);
 
 
     }
@@ -141,10 +109,16 @@ public class BallController : MonoBehaviour
     {
         _ballRb.AddForce((Vector3.up * (ballJumpForce * Time.deltaTime)));
         _ballRb.AddForce((Vector3.right * (ballMoveForce * Time.deltaTime)));
-
+        transform.RotateAround(transform.position, Vector3.down, 180f);
     }
 
     private void OnTriggerEnter(Collider other)
+    {
+       ScoreSystem(other);
+
+    }
+
+    private void ScoreSystem(Component other)
     {
         if (other.gameObject.CompareTag("ScoreColLeft"))
         {
@@ -170,7 +144,52 @@ public class BallController : MonoBehaviour
             scoreManager.Invoke(nameof(ScoreManager.ReturnOriginalScale), 1.1f);
 
         }
+    }
 
+    private void LimitBallPosition()
+    {
+        var objPosition = transform.position;
+        var cameraPosition = mainCam.transform.position;
+        var cameraViewSize = mainCam.orthographicSize;
+        var cameraAspectRatio = mainCam.aspect;
+
+        var xMin = cameraPosition.x - cameraViewSize * cameraAspectRatio;
+        var xMax = cameraPosition.x + cameraViewSize * cameraAspectRatio;
+
+        var yMin = cameraPosition.y - cameraViewSize * cameraAspectRatio;
+        var yMax = cameraPosition.y + cameraViewSize * cameraAspectRatio;
+
+        if (objPosition.x < xMin)
+        {
+            objPosition.x = xMax;
+            _ballRb.AddForce(Vector3.left * 40);
+
+            _ballRb.velocity = Vector3.zero;
+
+
+
+        }
+        if (objPosition.x > xMax)
+        {
+            objPosition.x = xMin;
+            _ballRb.AddForce(Vector3.right * 40);
+
+            _ballRb.velocity = Vector3.zero;
+        }
+
+       
+
+        if (objPosition.y > yMax +1f)
+        {
+            objPosition.y = yMin -0.7f;
+            _ballRb.AddForce(Vector3.up * 50);
+
+            _ballRb.velocity = Vector3.zero;
+        }
+        
+        
+
+        transform.position = objPosition;
     }
 
     private void OnTriggerExit(Collider other)
